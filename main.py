@@ -1,19 +1,25 @@
 
-from dataclasses import dataclass
 from copy import deepcopy
-import math
+from sudoku_functions import *
+from cell import Cell
+
+import tkinter
+from tkinter.font import Font
 
 
-grid = [[5,0,0,4,0,1,0,6,0]
-       ,[0,0,1,0,9,0,0,0,0]
-       ,[0,0,0,0,8,0,4,0,0]
-       ,[6,0,0,0,0,0,0,0,2]
-       ,[0,0,5,3,0,7,9,0,0]
-       ,[0,0,0,0,1,0,0,0,0]
-       ,[0,0,7,5,0,4,3,0,0]
-       ,[0,0,0,8,0,0,0,0,0]
-       ,[0,3,0,0,0,0,0,9,0]]
+## 
+# Evil
+# grid = [[5,0,0,4,0,1,0,6,0]
+#        ,[0,0,1,0,9,0,0,0,0]
+#        ,[0,0,0,0,8,0,4,0,0]
+#        ,[6,0,0,0,0,0,0,0,2]
+#        ,[0,0,5,3,0,7,9,0,0]
+#        ,[0,0,0,0,1,0,0,0,0]
+#        ,[0,0,7,5,0,4,3,0,0]
+#        ,[0,0,0,8,0,0,0,0,0]
+#        ,[0,3,0,0,0,0,0,9,0]]
 
+# # Easy
 # grid = [[0,9,4,0,0,0,6,0,0]
 #        ,[0,5,3,9,8,6,0,4,1]
 #        ,[0,8,2,0,1,3,9,7,5]
@@ -24,110 +30,101 @@ grid = [[5,0,0,4,0,1,0,6,0]
 #        ,[0,1,0,0,0,0,7,0,0]
 #        ,[3,0,0,2,9,0,0,5,0]]
 
-def printPretty(grid):
-    for line in grid:
-        print(line)
+# # Semi-hard
+# grid = [[8,6,5,3,0,0,0,0,0]
+#        ,[0,0,0,0,0,5,0,2,1]
+#        ,[0,0,9,0,0,0,0,0,0]
+#        ,[0,0,0,0,7,0,1,3,0]
+#        ,[4,0,0,1,0,0,0,0,0]
+#        ,[9,0,0,0,0,6,0,0,0]
+#        ,[0,9,0,0,0,0,0,5,0]
+#        ,[5,0,0,4,0,0,2,6,0]
+#        ,[0,0,3,0,6,0,0,0,0]]
 
-def makeZeroGrid(sz):
-    grid = []
-    for i in range(0,sz):
-        grid.append([])
-    for line in grid:
-        for i in range(sz):
-            line.append(0)
-    return grid
+# New Evil
+grid = [[0,0,8,0,0,0,0,0,0]
+       ,[5,0,9,0,1,0,0,0,7]
+       ,[0,0,0,0,0,6,0,1,0]
+       ,[2,0,5,0,0,4,9,0,0]
+       ,[0,8,0,0,5,0,0,0,0]
+       ,[0,6,0,0,0,0,0,0,2]
+       ,[0,0,0,3,0,0,4,0,0]
+       ,[0,2,0,0,0,0,0,0,0]
+       ,[7,0,1,0,6,0,0,0,9]]
 
-def rotateGrid(grid):
-    sz = len(grid)
-    vlines = makeZeroGrid(sz)
-    for i in range(sz):
-        for j in range(sz):
-            vlines[i][j] = grid[j][i]
-    return vlines
-
-
-@dataclass
-class Cell:
-    locx: int
-    locy: int
-    val: int
+# New Evil2
+grid = [[0,7,0,0,0,4,0,0,0]
+       ,[3,0,0,7,0,0,0,9,5]
+       ,[0,0,0,0,0,0,0,0,2]
+       ,[0,0,0,9,0,0,2,0,0]
+       ,[1,0,0,0,0,0,4,0,0]
+       ,[0,0,5,0,0,6,0,1,9]
+       ,[0,0,6,0,8,0,0,0,0]
+       ,[5,0,0,4,0,0,0,3,7]
+       ,[0,0,0,0,0,0,1,0,0]]
 
 
-    def __post_init__(self):
-        if self.val:
-            self.picked = True
-            self.couldbe = [self.val]
-        else:
-            self.picked = False
-            self.couldbe = [1,2,3,4,5,6,7,8,9]
-        self.loc = (self.locx,self.locy)
 
-    def removeOrInsertCouldbeWithValue(self,val):
-        # initially = deepcopy(self.couldbe)
-        # inlen = len(self.couldbe)
-        if self.picked: return
-        # if not len(self.couldbe) > 2:
-        #     print("before assignment")
-        self.assignValIfLen1()
-        if self.picked: return
-        # after1 = deepcopy(self.couldbe)
-        # aflen = len(self.couldbe)
+def backgroundPicker(val):
+    match val:
+        case 1:
+            return "snow"
+        case 2:
+            return "dark violet"
+        case 3:
+            return "navy"
+        case 4:
+            return "orchid1"
+        case 5:
+            return "pink1"
+        case 6:
+            return "coral"
+        case 7:
+            return "sky blue"
+        case 8:
+            return "Slategray1"
+        case 9:
+            return "gold2"
 
-        # If value is in couldbe: remove it 
-        if val in self.couldbe:
-            # before = len(self.couldbe)
-            self.couldbe.remove(val)
-            # after2 = deepcopy(self.couldbe)
-            # If the new length is 1: assign value 
-            self.assignValIfLen1()
-            # if len(self.couldbe) == 0 and before == 1:
-            #     pass
-            #     print(f"1- {initially} -len {inlen}*** 2- {after1} -len {aflen}*** 3- {after2} *** ")
+def center_window(root,width,height):
+        w = width # width for the Tk root
+        h = height # height for the Tk root
 
-    def assignValIfLen1(self):
-        # Assign the could be if its the only one
-        if self.picked: return
-        if len(self.couldbe) == 1:
-            self.val = self.couldbe[0]
-            self.picked = True
+        # get screen width and height
+        ws = root.winfo_screenwidth() # width of the screen
+        hs = root.winfo_screenheight() # height of the screen
 
-    def assignVal(self,val):
-        self.val = val
-        self.picked = True
+        # calculate x and y coordinates for the Tk root window
+        x = (ws/2) - (w/2)
+        y = (hs/2) - (h/2)
 
-    def __str__(self):
-        if self.picked:
-            return f".{self.val}"
-        else:
-            return f"|{len(self.couldbe)}"
+        # set the dimensions of the screen 
+        # and where it is placed
+        root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
-    def __repr__(self):
-        if self.picked:
-            return f".{self.val}"
-        else:
-            # return f"|{len(self.couldbe)}"
-            return f"{self.couldbe}"
+def showState(cells):
+    root = tkinter.Tk()
+    center_window(root,900,450)
+    frames = makeZeroGrid(9)
+    width = 100
+    height = 50
+    for i in range (9):
+        for j in range (9):
+            newfr = tkinter.LabelFrame(root)
+            frames[i][j] = newfr
+            newfr.place(x = width * i, y= height* j, width = width , height = height)
 
-    def __setattr__(self, name, value):
-        self.__dict__[name] = value
-        if name == 'val' and value == 0:
-            pass
-            # print("val changed to zero")
-        try:
-            if self.loc == (0,8):
-                pass
-        except:
-            pass
-        try:
-            if not self.picked:
-                pass
-                # print(f"not picked but assigned: {self.val}, pos : {self.loc}")
-                # print(f"{self.couldbe}")
-        except:
-            pass
+    labels = []
+    for i,line in enumerate(cells):
+        for j,cell in enumerate(line):
+            if cell.picked:
+                newlab = tkinter.Label(frames[j][i], text = cell.val,font = Font(family="Consolas",size = 25),background = backgroundPicker(cell.val))
+            else:
+                newlab = tkinter.Label(frames[j][i], text = f"{cell.couldbe}",font = Font(family="Consolas",size = 6))
+            newlab.grid(row = cell.locx, column = cell.locy)
+    # root.after(250,lambda:root.destroy())
+    root.mainloop()
 
-    def __eq__(self,other):
-        return self.loc == other.loc and self.val == other.val and self.couldbe == other.couldbe
 
 
 ## creating cells
@@ -140,23 +137,7 @@ for i,line in enumerate(grid):
 
 print("-------------------------------------------------------")
     
-def GetMaxIndexes(grid):
-    maxval = 0
-    maxind = []
-    for ind,line in enumerate(grid):
-        val = max(line)
-        if val >= maxval:
-            if val > maxval:
-                maxind = []
-                maxval = val
-            maxind.append((ind,line.index(val)))
-    return(maxind)
 
-def getVLine(grid,ind):
-    vline = []
-    for line in grid:
-        vline.append(line[ind])
-    return vline
 
 def changeCouldbees(cells):
     for i,line in enumerate(cells):
@@ -171,12 +152,6 @@ def changeCouldbees(cells):
                     for vercell in verline:
                         if vercell.picked:
                             curcel.removeOrInsertCouldbeWithValue(vercell.val)
-
-def calcBounds(n,base):
-    mult = math.floor(n/base)
-    lower_bound = base * mult
-    upper_bound = lower_bound + 2
-    return (lower_bound,upper_bound)
 
 def check3x3(curcel,cells,i,j):
     base = 3
@@ -233,68 +208,101 @@ def checkForSame_couldbe_InLines(curcel,cells,i,j):
 
 
 
-c = 0
-
-while True:
-    c += 1
-    compare_cell = deepcopy(cells)
-    # change couldbees
-    changeCouldbees(cells)
-    # couldbe sıfırlanınca insert val
-    for i,line in enumerate(cells):
-        for j,curcel in enumerate(line):
-            curcel = cells[i][j]
-            ## Assigning if could be length is 1
-            curcel.assignValIfLen1()
-            if not curcel.picked:
-                checkForSame_couldbe_InLines(curcel,cells,i,j)
-            if not curcel.picked:
-                check3x3(curcel,cells,i,j)
-    if compare_cell == cells:
-        break
-
-### Implement Trial and error
+def solve(cells):
+    c = 0
+    while True:
+        c += 1
+        compare_cell = deepcopy(cells)
+        # change couldbees
+        changeCouldbees(cells)
+        # couldbe sıfırlanınca insert val
+        for i,line in enumerate(cells):
+            for j,curcel in enumerate(line):
+                curcel = cells[i][j]
+                ## Assigning if could be length is 1
+                curcel.assignValIfLen1()
+                if not curcel.picked:
+                    checkForSame_couldbe_InLines(curcel,cells,i,j)
+                if not curcel.picked:
+                    check3x3(curcel,cells,i,j)
+        if compare_cell == cells: return(cells)
 
 
-print(c)
+cells = solve(cells)
 
-import tkinter
-from tkinter.font import Font
+import time
 
-root = tkinter.Tk()
-root.geometry("720x450")
-frames = makeZeroGrid(9)
-width = 80
-height = 50
-for i in range (9):
-    for j in range (9):
-        newfr = tkinter.LabelFrame(root)
-        frames[i][j] = newfr
-        newfr.place(x = width * i, y= height* j, width = width , height = height)
+def trial_and_error(cells):
+    ### Recording the initialstate
+    initialstate = deepcopy(cells)
 
-labels = []
-for i,line in enumerate(cells):
-    for j,cell in enumerate(line):
-        if cell.picked:
-            newlab = tkinter.Label(frames[j][i], text = cell.val,font = Font(family="Consolas",size = 25))
-        else:
-            newlab = tkinter.Label(frames[j][i], text = f"{cell.couldbe}",font = Font(family="Consolas",size = 5))
-        newlab.grid(row = cell.locx, column = cell.locy)
+    # time.sleep(1)
+    ### If completed just return
+    if (CheckCompletion(cells)): 
+        print("Completed")
+        print("return 1")
+        return cells
+    while True:
+        if (CheckCompletion(cells)): break
+        leastIndexes = GetLeastCouldBeCellsIndexes(cells)
+        
+        # Get leastIndexes
+        indexes = leastIndexes[0]
+        curcel = cells[indexes[0]][indexes[1]]
+        ######################################################################
+        #### Check if there are no possibilities that gives NotBroken > if there are > return initial state
+        ## If there are actual possibilites store them
+
+        possibilities = []
+        cell_possibilities = []
+        locations = []
+        for possibility in curcel.couldbe:
+            modifycells = deepcopy(cells)
+            modifycell = modifycells[indexes[0]][indexes[1]]
+            modifycell.assignVal(possibility)
+            modifycells = solve(modifycells)
+
+            if (CheckForBroken(modifycells)): 
+                pass
+            elif (CheckCompletion(modifycells)): 
+                print("Solved!!")
+                cells = modifycells
+                break
+            else:
+                newcopy = deepcopy(modifycells)
+                possibilities.append(possibility)
+                locations.append(modifycell.loc)
+                cell_possibilities.append(newcopy)
 
 
-first3x3 = makeZeroGrid(3)
-for i in range (3):
-    for j in range (3):
-        first3x3[i][j] = cells[i][j]
+     
+        if (CheckCompletion(cells)): break
+        
 
+        if (len(cell_possibilities)) == 0:
+            return initialstate
+        ########################################################################
 
+        ########################################################################
+        ## If there are more than one possibility, recursively search
 
-poss = makeZeroGrid(3)
-for i,line in enumerate(first3x3):
-    for j,cell in enumerate(line):  
-        if cell.picked:
-            poss[i][j] = cell.val
-        else:
-            poss[i][j] = cell.couldbe
+        for i,cell_possibility in enumerate(cell_possibilities):
+        ### Cannot be broken or the solution
+            latest_replica = deepcopy(cell_possibility)
+            latest_replica = trial_and_error(latest_replica)
+            if (CheckCompletion(latest_replica)):
+                cells = latest_replica
+                break
+            else:
+                cells = latest_replica
 
-root.mainloop()
+        if (len(cell_possibilities)) == 0:
+            return initialstate
+    return cells
+
+cells = trial_and_error(cells)
+
+print("-------------DONE------------------")
+print(f"Completed = {CheckCompletion(cells)}")
+print(f"Broken = {CheckForBroken(cells)}")
+showState(cells)
