@@ -47,7 +47,7 @@ def GetMaxIndexes(grid):
     return(maxind)
 
 def GetLeastCouldBeCellsIndexes(cells):
-    minlen = 5
+    minlen = 9
     minind = []
     for i,line in enumerate(cells):
         for j,cell in enumerate(line):
@@ -70,7 +70,7 @@ def CheckForBroken(cells):
         linevals = []
         for cell in line:
             if len(cell.couldbe) == 0:
-                #print("reason1")
+                #print("Couldbe length is zero")
                 return True
             if cell.picked: linevals.append(cell.val)
         for cell in line:
@@ -80,12 +80,29 @@ def CheckForBroken(cells):
                     if possibility in linevals:
                         encounter += 1
                 if encounter == i+1:
-                    #print("reason2")
+                    #print("The inputted value makes one of the grids impossible to assign")
                     return True
 
         if not allDifferent1D(linevals): 
-            #print("reason3")
+            #print("Horizontally broken")
             return True
+
+    # Check grid broken
+    base = 3
+    for i in range(base):
+        hor_bounds = calcBounds(i*3,base)
+        for j in range(base):
+            ver_bounds = calcBounds(j*3,base)
+            cellsin3x3 = []
+            gridvals = []
+            for k in range (hor_bounds[0],hor_bounds[1]+1):
+                for l in range (ver_bounds[0],ver_bounds[1]+1):
+                    cellsin3x3.append(cells[k][l])
+            for cell in cellsin3x3:
+                if cell.picked: gridvals.append(cell.val)
+            if not allDifferent1D(gridvals): 
+                #print("Grid broken")
+                return True
 
     for i in range(len(cells)):
         vline = getVLine(cells,i)
@@ -93,7 +110,7 @@ def CheckForBroken(cells):
         for cell in vline:
             if cell.picked: linevals.append(cell.val)
         if not allDifferent1D(linevals): 
-            #print("reason4")
+            #print("Vertically broken")
             return True
     return False
 
@@ -103,6 +120,8 @@ def CheckCompletion(cells):
             if not cell.val: return False
     if CheckForBroken(cells): return False
     return True
+
+
 
     
 

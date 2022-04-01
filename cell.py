@@ -20,6 +20,9 @@ class Cell:
 
 
     def __post_init__(self):
+        self.active = False
+        self.color = "black"
+        self.fontsize = 15
         if self.val:
             self.picked = True
             self.couldbe = [self.val]
@@ -27,6 +30,7 @@ class Cell:
             self.picked = False
             self.couldbe = [1,2,3,4,5,6,7,8,9]
         self.loc = (self.locx,self.locy)
+        self.pyRect = pygame.Rect(self.locx * CELLWIDTH, self.locy * CELLWIDTH, CELLWIDTH, CELLWIDTH)
 
     def removeOrInsertCouldbeWithValue(self,val):
         # initially = deepcopy(self.couldbe)
@@ -53,7 +57,7 @@ class Cell:
     def draw(self,win):
         if self.picked:
             text_rect = (self.locx * CELLWIDTH, self.locy * CELLWIDTH , CELLWIDTH , CELLWIDTH)
-            PrintTextatCenter(win,text_rect,str(self.val),font=NUMBERFONT,fontsize=15,color=(0,0,0))
+            PrintTextatCenter(win,text_rect,str(self.val),font=NUMBERFONT,fontsize=self.fontsize,color=self.color)
         else:
             pass
 
@@ -65,7 +69,14 @@ class Cell:
             self.val = self.couldbe[0]
             self.picked = True
 
+    def handle_press(self,pos):
+        if self.pyRect.collidepoint(pos[0],pos[1]):
+            self.active = True
+        else:
+            self.active = False
+
     def assignVal(self,val):
+        if val == 0: return
         self.val = val
         self.picked = True
 
@@ -79,7 +90,7 @@ class Cell:
         if self.picked:
             return f".{self.val}"
         else:
-            # return f"|{len(self.couldbe)}"
+            return f"|{len(self.couldbe)}"
             return f"{self.couldbe}"
 
     def __setattr__(self, name, value):
