@@ -102,30 +102,50 @@ def center_window(root,width,height):
         # and where it is placed
         root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
+import time
+
+CELL_BACKGROUND = "cyan4"
+TEXTCOLOR = "white"
 def showState(cells):
     root = tkinter.Tk()
-    center_window(root,900,450)
+    center_window(root,450,450)
     frames = makeZeroGrid(9)
-    width = 100
+    width = 50
     height = 50
     for i in range (9):
         for j in range (9):
-            newfr = tkinter.LabelFrame(root)
+            newfr = tkinter.LabelFrame(root, background = CELL_BACKGROUND)
             frames[i][j] = newfr
             newfr.place(x = width * i, y= height* j, width = width , height = height)
 
-    labels = []
+    labels = makeZeroGrid(9)
     for i,line in enumerate(cells):
         for j,cell in enumerate(line):
             if cell.picked:
-                newlab = tkinter.Label(frames[j][i], text = cell.val,font = Font(family="Consolas",size = 25),background = backgroundPicker(cell.val))
+                newlab = tkinter.Label(frames[j][i], text = cell.val,font = Font(family="Consolas",size = 25),foreground = TEXTCOLOR,background = CELL_BACKGROUND)
+                
+                labels[j][i] = newlab
             else:
-                newlab = tkinter.Label(frames[j][i], text = f"{cell.couldbe}",font = Font(family="Consolas",size = 6))
-            newlab.grid(row = cell.locx, column = cell.locy)
+                str_couldbe = [str(a) for a in cell.couldbe]
+                newlab = tkinter.Label(frames[j][i], text = f"{', '.join(str_couldbe)}",font = Font(family="Consolas",size = 6),foreground = TEXTCOLOR,background = CELL_BACKGROUND,wraplength=40,justify="left")
+                labels[j][i] = newlab
+            newlab.pack()
     # root.after(250,lambda:root.destroy())
-    root.mainloop()
+    root.update()
+    return root,labels
+    # root.mainloop()
 
 
+
+def changeUI(cells,root,labels):
+    for i,line in enumerate(cells):
+        for j,cell in enumerate(line):
+            if cell.picked:
+                labels[j][i].configure(text = cell.val, font = Font(family="Consolas",size = 25), foreground = TEXTCOLOR,background = CELL_BACKGROUND)
+            else:
+                str_couldbe = [str(a) for a in cell.couldbe]
+                labels[j][i].configure(text = f"{', '.join(str_couldbe)}", font = Font(family="Consolas",size = 6), foreground = TEXTCOLOR,background = CELL_BACKGROUND,wraplength=40,justify="left")
+    root.update()
 
 ## creating cells
 cells = []
@@ -136,7 +156,7 @@ for i,line in enumerate(grid):
     cells.append(newline)
 
 print("-------------------------------------------------------")
-    
+root,labels = showState(cells)
 
 
 def changeCouldbees(cells):
@@ -208,9 +228,10 @@ def checkForSame_couldbe_InLines(curcel,cells,i,j):
 
 
 
-def solve(cells):
+def solve(cells,root,labels):
     c = 0
     while True:
+        changeUI(cells,root,labels)
         c += 1
         compare_cell = deepcopy(cells)
         # change couldbees
@@ -228,11 +249,11 @@ def solve(cells):
         if compare_cell == cells: return(cells)
 
 
-cells = solve(cells)
+cells = solve(cells,root,labels)
 
-import time
 
-def trial_and_error(cells):
+
+def trial_and_error(cells,root,labels):
     ### Recording the initialstate
     initialstate = deepcopy(cells)
 
@@ -260,7 +281,7 @@ def trial_and_error(cells):
             modifycells = deepcopy(cells)
             modifycell = modifycells[indexes[0]][indexes[1]]
             modifycell.assignVal(possibility)
-            modifycells = solve(modifycells)
+            modifycells = solve(modifycells,root,labels)
 
             if (CheckForBroken(modifycells)): 
                 pass
@@ -289,7 +310,7 @@ def trial_and_error(cells):
         for i,cell_possibility in enumerate(cell_possibilities):
         ### Cannot be broken or the solution
             latest_replica = deepcopy(cell_possibility)
-            latest_replica = trial_and_error(latest_replica)
+            latest_replica = trial_and_error(latest_replica,root,labels)
             if (CheckCompletion(latest_replica)):
                 cells = latest_replica
                 break
@@ -300,9 +321,12 @@ def trial_and_error(cells):
             return initialstate
     return cells
 
-cells = trial_and_error(cells)
+if not CheckCompletion(cells):
+    cells = trial_and_error(cells,root,labels)
 
 print("-------------DONE------------------")
 print(f"Completed = {CheckCompletion(cells)}")
 print(f"Broken = {CheckForBroken(cells)}")
-showState(cells)
+# root,labels = showState(cells)
+
+root.mainloop()
