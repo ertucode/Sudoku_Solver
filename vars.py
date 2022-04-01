@@ -1,0 +1,10 @@
+
+
+WIDTH, HEIGHT = 450, 450
+CELLWIDTH = WIDTH / 9
+
+CELL_BACKGROUND = "cyan4"
+TEXTCOLOR = "white"
+LINECOLOR = "black"
+WINDOW_BACKGROUND = "white"
+NUMBERFONT = "Consolas"

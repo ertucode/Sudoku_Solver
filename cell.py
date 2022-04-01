@@ -1,4 +1,16 @@
+from vars import *
 from dataclasses import dataclass
+import pygame
+
+
+def PrintTextatCenter(win,text_rect,text,font=NUMBERFONT,fontsize=15,color=(0,0,0)):
+    xc = text_rect[0] + text_rect[2]/2
+    yc = text_rect[1] + text_rect[3]/2
+    myfont = pygame.font.SysFont(font,fontsize)
+    text_sur = myfont.render(text,True,color)
+    text_rect = text_sur.get_rect(center=(xc, yc))
+    win.blit(text_sur,text_rect)
+
 
 @dataclass(unsafe_hash = True)
 class Cell:
@@ -37,6 +49,14 @@ class Cell:
             # if len(self.couldbe) == 0 and before == 1:
             #     pass
             #     print(f"1- {initially} -len {inlen}*** 2- {after1} -len {aflen}*** 3- {after2} *** ")
+
+    def draw(self,win):
+        if self.picked:
+            text_rect = (self.locx * CELLWIDTH, self.locy * CELLWIDTH , CELLWIDTH , CELLWIDTH)
+            PrintTextatCenter(win,text_rect,str(self.val),font=NUMBERFONT,fontsize=15,color=(0,0,0))
+        else:
+            pass
+
 
     def assignValIfLen1(self):
         # Assign the could be if its the only one

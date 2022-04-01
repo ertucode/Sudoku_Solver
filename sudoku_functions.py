@@ -104,6 +104,8 @@ def CheckCompletion(cells):
     if CheckForBroken(cells): return False
     return True
 
+    
+
 # grid = [[1,9,8,7,6,5,4,3,2]
 #        ,[2,1,9,8,7,6,5,4,3]
 #        ,[3,2,1,9,8,7,6,5,4]

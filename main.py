@@ -1,11 +1,12 @@
 
+from vars import *
 from copy import deepcopy
 from sudoku_functions import *
 from cell import Cell
+import time
+import sys
 
-import tkinter
-from tkinter.font import Font
-
+import pygame
 
 ## 
 # Evil
@@ -63,6 +64,13 @@ grid = [[0,7,0,0,0,4,0,0,0]
        ,[5,0,0,4,0,0,0,3,7]
        ,[0,0,0,0,0,0,1,0,0]]
 
+pygame.init()
+
+
+win = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Sudoku Solver")
+
+
 
 
 def backgroundPicker(val):
@@ -86,78 +94,20 @@ def backgroundPicker(val):
         case 9:
             return "gold2"
 
-def center_window(root,width,height):
-        w = width # width for the Tk root
-        h = height # height for the Tk root
-
-        # get screen width and height
-        ws = root.winfo_screenwidth() # width of the screen
-        hs = root.winfo_screenheight() # height of the screen
-
-        # calculate x and y coordinates for the Tk root window
-        x = (ws/2) - (w/2)
-        y = (hs/2) - (h/2)
-
-        # set the dimensions of the screen 
-        # and where it is placed
-        root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-
-import time
-
-CELL_BACKGROUND = "cyan4"
-TEXTCOLOR = "white"
-def showState(cells):
-    root = tkinter.Tk()
-    center_window(root,450,450)
-    frames = makeZeroGrid(9)
-    width = 50
-    height = 50
-    for i in range (9):
-        for j in range (9):
-            newfr = tkinter.LabelFrame(root, background = CELL_BACKGROUND)
-            frames[i][j] = newfr
-            newfr.place(x = width * i, y= height* j, width = width , height = height)
-
-    labels = makeZeroGrid(9)
-    for i,line in enumerate(cells):
-        for j,cell in enumerate(line):
-            if cell.picked:
-                newlab = tkinter.Label(frames[j][i], text = cell.val,font = Font(family="Consolas",size = 25),foreground = TEXTCOLOR,background = CELL_BACKGROUND)
-                
-                labels[j][i] = newlab
-            else:
-                str_couldbe = [str(a) for a in cell.couldbe]
-                newlab = tkinter.Label(frames[j][i], text = f"{', '.join(str_couldbe)}",font = Font(family="Consolas",size = 6),foreground = TEXTCOLOR,background = CELL_BACKGROUND,wraplength=40,justify="left")
-                labels[j][i] = newlab
-            newlab.pack()
-    # root.after(250,lambda:root.destroy())
-    root.update()
-    return root,labels
-    # root.mainloop()
 
 
 
-def changeUI(cells,root,labels):
-    for i,line in enumerate(cells):
-        for j,cell in enumerate(line):
-            if cell.picked:
-                labels[j][i].configure(text = cell.val, font = Font(family="Consolas",size = 25), foreground = TEXTCOLOR,background = CELL_BACKGROUND)
-            else:
-                str_couldbe = [str(a) for a in cell.couldbe]
-                labels[j][i].configure(text = f"{', '.join(str_couldbe)}", font = Font(family="Consolas",size = 6), foreground = TEXTCOLOR,background = CELL_BACKGROUND,wraplength=40,justify="left")
-    root.update()
-
-## creating cells
-cells = []
-for i,line in enumerate(grid):
-    newline = []
-    for j,member in enumerate(line):
-        newline.append(Cell(i,j,member))
-    cells.append(newline)
+def createCellsFromGrid(grid):
+    cells = []
+    for i,line in enumerate(grid):
+        newline = []
+        for j,member in enumerate(line):
+            newline.append(Cell(i,j,member))
+        cells.append(newline)
+    return cells
 
 print("-------------------------------------------------------")
-root,labels = showState(cells)
-
+cells = createCellsFromGrid(grid)
 
 def changeCouldbees(cells):
     for i,line in enumerate(cells):
@@ -226,16 +176,40 @@ def checkForSame_couldbe_InLines(curcel,cells,i,j):
                 curcel.picked = True
                 return
 
+run = True
 
+def drawGrid(win):
+    
+    for i in range(10):
+        LINEWIDTH = 1
+        if i % 3 == 0: LINEWIDTH = 3
+        pygame.draw.line(win,LINECOLOR,(0,i * CELLWIDTH),(WIDTH,i * CELLWIDTH),LINEWIDTH)
+        pygame.draw.line(win,LINECOLOR,(i * CELLWIDTH,0),(i * CELLWIDTH,WIDTH),LINEWIDTH)
 
-def solve(cells,root,labels):
+def draw(win,cells):
+    win.fill(WINDOW_BACKGROUND)
+    drawGrid(win)
+
+    for line in cells:
+        for cell in line:
+            cell.draw(win)
+
+    pygame.display.update()
+
+def solve(cells):
     c = 0
-    while True:
-        changeUI(cells,root,labels)
+    global run
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                sys.exit()
+
         c += 1
         compare_cell = deepcopy(cells)
         # change couldbees
         changeCouldbees(cells)
+        draw(win,cells)
         # couldbe sıfırlanınca insert val
         for i,line in enumerate(cells):
             for j,curcel in enumerate(line):
@@ -249,11 +223,12 @@ def solve(cells,root,labels):
         if compare_cell == cells: return(cells)
 
 
-cells = solve(cells,root,labels)
+cells = solve(cells)
 
 
 
-def trial_and_error(cells,root,labels):
+def trial_and_error(cells):
+    global run 
     ### Recording the initialstate
     initialstate = deepcopy(cells)
 
@@ -263,7 +238,8 @@ def trial_and_error(cells,root,labels):
         print("Completed")
         print("return 1")
         return cells
-    while True:
+
+    while run:
         if (CheckCompletion(cells)): break
         leastIndexes = GetLeastCouldBeCellsIndexes(cells)
         
@@ -281,7 +257,7 @@ def trial_and_error(cells,root,labels):
             modifycells = deepcopy(cells)
             modifycell = modifycells[indexes[0]][indexes[1]]
             modifycell.assignVal(possibility)
-            modifycells = solve(modifycells,root,labels)
+            modifycells = solve(modifycells)
 
             if (CheckForBroken(modifycells)): 
                 pass
@@ -310,7 +286,7 @@ def trial_and_error(cells,root,labels):
         for i,cell_possibility in enumerate(cell_possibilities):
         ### Cannot be broken or the solution
             latest_replica = deepcopy(cell_possibility)
-            latest_replica = trial_and_error(latest_replica,root,labels)
+            latest_replica = trial_and_error(latest_replica)
             if (CheckCompletion(latest_replica)):
                 cells = latest_replica
                 break
@@ -322,11 +298,9 @@ def trial_and_error(cells,root,labels):
     return cells
 
 if not CheckCompletion(cells):
-    cells = trial_and_error(cells,root,labels)
+    cells = trial_and_error(cells)
 
 print("-------------DONE------------------")
 print(f"Completed = {CheckCompletion(cells)}")
 print(f"Broken = {CheckForBroken(cells)}")
-# root,labels = showState(cells)
 
-root.mainloop()
